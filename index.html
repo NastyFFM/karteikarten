@@ -5,41 +5,705 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karteikarten</title>
 <style>
+:root {
+  --bg: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-hover: #1f262e;
+  --text: #c9d1d9;
+  --text-dim: #8b949e;
+  --teal: #4ecdc4;
+  --accent: #58a6ff;
+  --border: #30363d;
+  --success: #3fb950;
+  --danger: #f85149;
+  --warn: #d29922;
+}
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:#0d0d14; color:#e0e0e0; padding:20px; min-height:100vh; }
-h1 { font-size:20px; margin-bottom:8px; }
-p { color:#888; font-size:13px; margin-bottom:20px; }
-.card { background:#1a1a2e; border-radius:8px; padding:16px; margin-bottom:12px; border:1px solid #2a2a3e; }
-button { background:#4ecdc4; color:#0d0d14; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; font-weight:600; }
-button:hover { opacity:0.9; }
-input, textarea { width:100%; padding:8px; background:#13131f; border:1px solid #2a2a3e; border-radius:6px; color:#e0e0e0; font-size:13px; margin-bottom:8px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 16px;
+  padding-bottom: 80px;
+}
+.container { max-width: 720px; margin: 0 auto; }
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+header h1 { font-size: 22px; display: flex; align-items: center; gap: 10px; }
+header h1 .icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--teal); color: var(--bg);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 800;
+}
+.btn {
+  background: var(--teal); color: var(--bg);
+  border: none; padding: 10px 16px; border-radius: 8px;
+  font-weight: 600; cursor: pointer; font-size: 14px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:hover { opacity: 0.9; }
+.btn:active { transform: scale(0.97); }
+.btn.secondary { background: var(--bg-card); color: var(--text); border: 1px solid var(--border); }
+.btn.danger { background: var(--danger); color: white; }
+.btn.ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+.btn-icon {
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); width: 32px; height: 32px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn-icon:hover { background: var(--bg-card); color: var(--text); }
+
+input, textarea {
+  width: 100%; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-size: 14px; font-family: inherit;
+}
+input:focus, textarea:focus { outline: none; border-color: var(--teal); }
+textarea { resize: vertical; min-height: 70px; }
+label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-dim); }
+
+/* Deck list */
+.deck-grid { display: grid; gap: 12px; }
+.deck-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.deck-card:hover { background: var(--bg-card-hover); }
+.deck-card:active { transform: scale(0.99); }
+.deck-info h3 { font-size: 16px; margin-bottom: 4px; }
+.deck-info .meta { font-size: 12px; color: var(--text-dim); display: flex; gap: 12px; }
+.deck-info .meta span { display: inline-flex; align-items: center; gap: 4px; }
+.deck-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.empty {
+  padding: 40px 20px; text-align: center;
+  color: var(--text-dim); border: 2px dashed var(--border);
+  border-radius: 12px;
+}
+.empty p { margin-bottom: 12px; }
+
+/* Card list (in deck) */
+.card-row {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 8px;
+}
+.card-row .text { flex: 1; min-width: 0; }
+.card-row .front { font-weight: 500; margin-bottom: 2px; word-break: break-word; }
+.card-row .back { font-size: 13px; color: var(--text-dim); word-break: break-word; }
+.card-row .box-badge {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 2px 8px;
+  font-size: 11px; color: var(--text-dim);
+}
+.card-row .actions { display: flex; gap: 4px; }
+
+/* Study mode */
+.study-wrap { padding: 20px 0; }
+.study-progress {
+  height: 6px; background: var(--bg-card);
+  border-radius: 3px; overflow: hidden; margin-bottom: 24px;
+}
+.study-progress > div {
+  height: 100%; background: var(--teal);
+  transition: width 0.3s ease;
+}
+.flashcard {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px 24px;
+  min-height: 320px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+  margin-bottom: 16px;
+  text-align: center;
+  transition: background 0.15s, transform 0.2s;
+}
+.flashcard:hover { background: var(--bg-card-hover); }
+.flashcard .label {
+  font-size: 11px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+.flashcard .content {
+  font-size: 22px; line-height: 1.4;
+  white-space: pre-wrap; word-break: break-word;
+}
+.flashcard .hint {
+  position: absolute; bottom: 16px;
+  font-size: 12px; color: var(--text-dim);
+}
+.flashcard.flipped { background: var(--bg-card-hover); border-color: var(--teal); }
+
+.study-actions { display: flex; gap: 8px; }
+.study-actions .btn { flex: 1; padding: 14px; font-size: 15px; }
+.btn.success { background: var(--success); color: white; }
+.btn.fail { background: var(--danger); color: white; }
+
+.study-info {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+/* Modal */
+.modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; z-index: 50;
+}
+.modal {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px;
+  width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal h2 { font-size: 18px; margin-bottom: 16px; }
+.modal .field { margin-bottom: 12px; }
+.modal .footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 16px;
+}
+
+/* Stats footer */
+.stats-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg-card); border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex; justify-content: space-around; align-items: center;
+  font-size: 12px; color: var(--text-dim);
+  z-index: 10;
+}
+.stats-bar .stat { text-align: center; }
+.stats-bar .stat strong { color: var(--text); display: block; font-size: 14px; }
+
+/* Backup buttons */
+.backup-bar {
+  position: fixed; bottom: 56px; right: 12px;
+  display: flex; gap: 6px; opacity: 0.6; z-index: 20;
+}
+.backup-bar:hover { opacity: 1; }
+.backup-bar button {
+  background: var(--bg-card); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 10px;
+  border-radius: 6px; cursor: pointer; font-size: 11px;
+}
+.backup-bar button:hover { color: var(--text); border-color: var(--teal); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-card); border: 1px solid var(--teal);
+  color: var(--text); padding: 10px 16px;
+  border-radius: 8px; font-size: 13px;
+  z-index: 100;
+  animation: toast-in 0.2s ease;
+}
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, -10px); } }
+.toast.error { border-color: var(--danger); }
+
+/* Mobile */
+@media (max-width: 520px) {
+  body { padding: 12px; padding-bottom: 90px; }
+  header h1 { font-size: 18px; }
+  .flashcard { min-height: 240px; padding: 28px 16px; }
+  .flashcard .content { font-size: 18px; }
+}
 </style>
 </head>
 <body>
-<h1>Karteikarten</h1>
-<p>karteikarten zum lernen für schuüler und studenten</p>
-<div class="card">
-  <p>Diese App wurde mit dem PulseOS App-Builder erstellt.</p>
-  <p style="margin-top:8px;">Bearbeite <code>apps/karteikarten/index.html</code> um sie anzupassen.</p>
+<div class="container">
+  <header>
+    <h1><span class="icon">K</span> Karteikarten</h1>
+    <div id="header-action"></div>
+  </header>
+  <main id="app"></main>
 </div>
-<script>
-// PulseOS SDK (automatisch verfuegbar):
-// PulseOS.saveState(data)     - Zustand speichern (PUT /app/karteikarten/api/state)
-// PulseOS.loadState()         - Zustand laden (GET /app/karteikarten/api/state)
-// PulseOS.emit(name, data)    - Output an Graph senden
-// PulseOS.onInput(name, cb)   - Input von Graph empfangen
-// PulseOS.onDataChanged(cb)   - Reagiere auf externe Datenänderungen
-// PulseOS.alert(msg)          - Zeige Alert in Agent-Bar
 
-// Graph-Integration: Empfange Daten von anderen Apps
+<div class="backup-bar">
+  <button onclick="downloadBackup()" title="Backup herunterladen">Export</button>
+  <button onclick="uploadBackup()" title="Backup hochladen">Import</button>
+</div>
+
+<div class="stats-bar" id="stats-bar"></div>
+
+<script src="/sdk.js"></script>
+<script>
+// ============================================================
+// Karteikarten — vanilla SPA with Leitner spaced repetition
+// ============================================================
+
+const APP_ID = 'karteikarten';
+const STORAGE_KEY = 'pulseos-app-' + APP_ID;
+const BOX_INTERVALS_DAYS = [1, 1, 2, 4, 8, 16]; // box 1..5 -> days
+const DAY_MS = 86400000;
+
+// ---------- Persistence ----------
+async function saveData(data) {
+  state = data;
+  try {
+    const r = await fetch('/app/' + APP_ID + '/api/state', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (r.ok) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      if (window.PulseOS && PulseOS.emit) PulseOS.emit('state', data);
+      return;
+    }
+  } catch (e) {}
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+async function loadData() {
+  try {
+    const r = await fetch('/app/' + APP_ID + '/api/state');
+    if (r.ok) {
+      const d = await r.json();
+      if (d && d.decks) return d;
+    }
+  } catch (e) {}
+  try {
+    const local = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (local && local.decks) return local;
+  } catch (e) {}
+  return { decks: [], stats: { totalReviews: 0, correctReviews: 0, lastStudyDate: null } };
+}
+
+// ---------- State ----------
+let state = { decks: [], stats: { totalReviews: 0, correctReviews: 0, lastStudyDate: null } };
+let view = { name: 'home' }; // home | deck | study
+let modal = null;             // { type, data }
+
+// ---------- Helpers ----------
+const uid = () => Math.random().toString(36).slice(2, 10);
+const todayKey = () => new Date().toISOString().slice(0, 10);
+
+function isDue(card) {
+  if (!card.lastReview) return true;
+  const intervalDays = BOX_INTERVALS_DAYS[Math.min(card.box || 1, 5)];
+  return Date.now() - card.lastReview >= intervalDays * DAY_MS;
+}
+
+function getDueCards(deck) {
+  return (deck.cards || []).filter(isDue);
+}
+
+function getDeck(id) {
+  return state.decks.find(d => d.id === id);
+}
+
+function showToast(msg, isError) {
+  const t = document.createElement('div');
+  t.className = 'toast' + (isError ? ' error' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ---------- Render ----------
+function render() {
+  renderStats();
+  renderHeader();
+  if (view.name === 'home') renderHome();
+  else if (view.name === 'deck') renderDeck();
+  else if (view.name === 'study') renderStudy();
+  renderModal();
+}
+
+function renderHeader() {
+  const el = document.getElementById('header-action');
+  if (view.name === 'home') {
+    el.innerHTML = '<button class="btn" onclick="openDeckEditor()">+ Deck</button>';
+  } else if (view.name === 'deck') {
+    el.innerHTML = '<button class="btn ghost" onclick="goHome()">← Zurueck</button>';
+  } else if (view.name === 'study') {
+    el.innerHTML = '<button class="btn ghost" onclick="goDeck(view.deckId)">← Beenden</button>';
+  }
+}
+
+function renderStats() {
+  const totalCards = state.decks.reduce((n, d) => n + (d.cards || []).length, 0);
+  const dueToday = state.decks.reduce((n, d) => n + getDueCards(d).length, 0);
+  const totalRev = state.stats.totalReviews || 0;
+  const correctRev = state.stats.correctReviews || 0;
+  const acc = totalRev ? Math.round((correctRev / totalRev) * 100) : 0;
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><strong>${state.decks.length}</strong>Decks</div>
+    <div class="stat"><strong>${totalCards}</strong>Karten</div>
+    <div class="stat"><strong>${dueToday}</strong>Faellig</div>
+    <div class="stat"><strong>${acc}%</strong>Trefferquote</div>
+  `;
+}
+
+function renderHome() {
+  const root = document.getElementById('app');
+  if (!state.decks.length) {
+    root.innerHTML = `
+      <div class="empty">
+        <p>Noch keine Stapel angelegt.</p>
+        <button class="btn" onclick="openDeckEditor()">Erstes Deck erstellen</button>
+      </div>`;
+    return;
+  }
+  root.innerHTML = '<div class="deck-grid">' + state.decks.map(d => {
+    const cardsCount = (d.cards || []).length;
+    const due = getDueCards(d).length;
+    return `
+      <div class="deck-card" onclick="goDeck('${d.id}')">
+        <div class="deck-info">
+          <h3>${escapeHtml(d.name)}</h3>
+          <div class="meta">
+            <span>${cardsCount} Karten</span>
+            ${due ? `<span style="color:var(--teal)">${due} faellig</span>` : '<span>nichts faellig</span>'}
+            ${d.description ? `<span>${escapeHtml(d.description.slice(0,40))}${d.description.length>40?'…':''}</span>` : ''}
+          </div>
+        </div>
+        <div class="deck-actions" onclick="event.stopPropagation()">
+          ${due ? `<button class="btn" onclick="goStudy('${d.id}')">Lernen</button>` : ''}
+          <button class="btn-icon" onclick="openDeckEditor('${d.id}')" title="Bearbeiten">✎</button>
+          <button class="btn-icon" onclick="deleteDeck('${d.id}')" title="Loeschen">🗑</button>
+        </div>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function renderDeck() {
+  const root = document.getElementById('app');
+  const deck = getDeck(view.deckId);
+  if (!deck) { goHome(); return; }
+  const cards = deck.cards || [];
+  const due = getDueCards(deck).length;
+
+  root.innerHTML = `
+    <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="font-size:20px;margin-bottom:4px;">${escapeHtml(deck.name)}</h2>
+        ${deck.description ? `<p style="color:var(--text-dim);font-size:13px;">${escapeHtml(deck.description)}</p>` : ''}
+        <p style="color:var(--text-dim);font-size:12px;margin-top:6px;">${cards.length} Karten · ${due} faellig</p>
+      </div>
+      <div style="display:flex;gap:8px;">
+        ${due ? `<button class="btn" onclick="goStudy('${deck.id}')">Lernen</button>` : ''}
+        <button class="btn secondary" onclick="openCardEditor('${deck.id}')">+ Karte</button>
+      </div>
+    </div>
+    ${cards.length ? cards.map(c => `
+      <div class="card-row">
+        <div class="text">
+          <div class="front">${escapeHtml(c.front)}</div>
+          <div class="back">${escapeHtml(c.back)}</div>
+        </div>
+        <span class="box-badge">Box ${c.box || 1}</span>
+        <div class="actions">
+          <button class="btn-icon" onclick="openCardEditor('${deck.id}','${c.id}')" title="Bearbeiten">✎</button>
+          <button class="btn-icon" onclick="deleteCard('${deck.id}','${c.id}')" title="Loeschen">🗑</button>
+        </div>
+      </div>`).join('') : `
+      <div class="empty">
+        <p>Noch keine Karten in diesem Deck.</p>
+        <button class="btn" onclick="openCardEditor('${deck.id}')">Erste Karte hinzufuegen</button>
+      </div>`}
+  `;
+}
+
+function renderStudy() {
+  const root = document.getElementById('app');
+  const deck = getDeck(view.deckId);
+  if (!deck) { goHome(); return; }
+  const queue = view.queue || [];
+  const idx = view.idx || 0;
+
+  if (idx >= queue.length) {
+    root.innerHTML = `
+      <div class="empty">
+        <h2 style="color:var(--teal);margin-bottom:8px;">🎉 Fertig!</h2>
+        <p>Du hast alle faelligen Karten in "${escapeHtml(deck.name)}" durchgearbeitet.</p>
+        <p style="margin-top:12px;font-size:13px;">${view.session?.correct || 0} richtig · ${view.session?.wrong || 0} falsch</p>
+        <button class="btn" style="margin-top:12px;" onclick="goDeck('${deck.id}')">Zurueck zum Deck</button>
+      </div>`;
+    return;
+  }
+
+  const card = queue[idx];
+  const flipped = view.flipped;
+  const progress = Math.round((idx / queue.length) * 100);
+
+  root.innerHTML = `
+    <div class="study-wrap">
+      <div class="study-info">
+        <span>Karte ${idx + 1} / ${queue.length}</span>
+        <span>Box ${card.box || 1}</span>
+      </div>
+      <div class="study-progress"><div style="width:${progress}%"></div></div>
+      <div class="flashcard ${flipped ? 'flipped' : ''}" onclick="flipCard()">
+        <div class="label">${flipped ? 'Rueckseite' : 'Vorderseite'}</div>
+        <div class="content">${escapeHtml(flipped ? card.back : card.front)}</div>
+      </div>
+      ${flipped ? `
+        <div class="study-actions">
+          <button class="btn fail" onclick="answerCard(false)">Nicht gewusst</button>
+          <button class="btn success" onclick="answerCard(true)">Gewusst</button>
+        </div>` : `
+        <button class="btn secondary" style="width:100%;padding:14px;" onclick="flipCard()">Antwort anzeigen</button>
+      `}
+    </div>`;
+}
+
+function renderModal() {
+  const old = document.getElementById('modal-bg');
+  if (old) old.remove();
+  if (!modal) return;
+  const bg = document.createElement('div');
+  bg.id = 'modal-bg';
+  bg.className = 'modal-bg';
+  bg.addEventListener('click', e => { if (e.target === bg) closeModal(); });
+
+  if (modal.type === 'deck') {
+    const d = modal.data || {};
+    bg.innerHTML = `
+      <div class="modal">
+        <h2>${d.id ? 'Deck bearbeiten' : 'Neues Deck'}</h2>
+        <div class="field">
+          <label>Name</label>
+          <input id="m-name" value="${escapeHtml(d.name||'')}" placeholder="z.B. Englisch Vokabeln" autofocus>
+        </div>
+        <div class="field">
+          <label>Beschreibung (optional)</label>
+          <textarea id="m-desc" placeholder="Worum geht es in diesem Stapel?">${escapeHtml(d.description||'')}</textarea>
+        </div>
+        <div class="footer">
+          <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+          <button class="btn" onclick="saveDeck('${d.id||''}')">Speichern</button>
+        </div>
+      </div>`;
+  } else if (modal.type === 'card') {
+    const c = modal.data.card || {};
+    bg.innerHTML = `
+      <div class="modal">
+        <h2>${c.id ? 'Karte bearbeiten' : 'Neue Karte'}</h2>
+        <div class="field">
+          <label>Vorderseite (Frage)</label>
+          <textarea id="m-front" autofocus placeholder="z.B. apple">${escapeHtml(c.front||'')}</textarea>
+        </div>
+        <div class="field">
+          <label>Rueckseite (Antwort)</label>
+          <textarea id="m-back" placeholder="z.B. Apfel">${escapeHtml(c.back||'')}</textarea>
+        </div>
+        <div class="footer">
+          <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+          <button class="btn" onclick="saveCard('${modal.data.deckId}','${c.id||''}')">Speichern</button>
+        </div>
+      </div>`;
+  }
+  document.body.appendChild(bg);
+}
+
+// ---------- Navigation ----------
+function goHome() { view = { name: 'home' }; render(); }
+function goDeck(id) { view = { name: 'deck', deckId: id }; render(); }
+function goStudy(id) {
+  const deck = getDeck(id);
+  if (!deck) return;
+  const due = getDueCards(deck);
+  if (!due.length) { showToast('Keine faelligen Karten'); return; }
+  // shuffle
+  const queue = due.slice();
+  for (let i = queue.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [queue[i], queue[j]] = [queue[j], queue[i]];
+  }
+  view = { name: 'study', deckId: id, queue, idx: 0, flipped: false, session: { correct: 0, wrong: 0 } };
+  render();
+}
+
+// ---------- Modals ----------
+function openDeckEditor(id) {
+  const deck = id ? getDeck(id) : null;
+  modal = { type: 'deck', data: deck || {} };
+  render();
+}
+function openCardEditor(deckId, cardId) {
+  const deck = getDeck(deckId);
+  if (!deck) return;
+  const card = cardId ? (deck.cards || []).find(c => c.id === cardId) : null;
+  modal = { type: 'card', data: { deckId, card: card || {} } };
+  render();
+}
+function closeModal() { modal = null; render(); }
+
+// ---------- CRUD ----------
+async function saveDeck(id) {
+  const name = document.getElementById('m-name').value.trim();
+  const description = document.getElementById('m-desc').value.trim();
+  if (!name) { showToast('Name fehlt', true); return; }
+  if (id) {
+    const d = getDeck(id);
+    if (d) { d.name = name; d.description = description; }
+  } else {
+    state.decks.push({ id: uid(), name, description, created: Date.now(), cards: [] });
+  }
+  modal = null;
+  await saveData(state);
+  render();
+}
+
+async function deleteDeck(id) {
+  const d = getDeck(id);
+  if (!d) return;
+  if (!confirm(`Deck "${d.name}" wirklich loeschen? Alle Karten gehen verloren.`)) return;
+  state.decks = state.decks.filter(x => x.id !== id);
+  await saveData(state);
+  render();
+}
+
+async function saveCard(deckId, cardId) {
+  const front = document.getElementById('m-front').value.trim();
+  const back = document.getElementById('m-back').value.trim();
+  if (!front || !back) { showToast('Vorder- und Rueckseite erforderlich', true); return; }
+  const deck = getDeck(deckId);
+  if (!deck) return;
+  if (!deck.cards) deck.cards = [];
+  if (cardId) {
+    const c = deck.cards.find(x => x.id === cardId);
+    if (c) { c.front = front; c.back = back; }
+  } else {
+    deck.cards.push({
+      id: uid(), front, back,
+      box: 1, lastReview: 0, correctCount: 0, wrongCount: 0
+    });
+  }
+  modal = null;
+  await saveData(state);
+  render();
+}
+
+async function deleteCard(deckId, cardId) {
+  const deck = getDeck(deckId);
+  if (!deck) return;
+  if (!confirm('Karte loeschen?')) return;
+  deck.cards = (deck.cards || []).filter(c => c.id !== cardId);
+  await saveData(state);
+  render();
+}
+
+// ---------- Study ----------
+function flipCard() {
+  if (view.name !== 'study') return;
+  view.flipped = !view.flipped;
+  render();
+}
+
+async function answerCard(correct) {
+  if (view.name !== 'study') return;
+  const card = view.queue[view.idx];
+  if (!card) return;
+  // mutate the actual card in state (queue holds reference)
+  card.lastReview = Date.now();
+  if (correct) {
+    card.correctCount = (card.correctCount || 0) + 1;
+    card.box = Math.min((card.box || 1) + 1, 5);
+    view.session.correct++;
+  } else {
+    card.wrongCount = (card.wrongCount || 0) + 1;
+    card.box = 1;
+    view.session.wrong++;
+  }
+  state.stats.totalReviews = (state.stats.totalReviews || 0) + 1;
+  if (correct) state.stats.correctReviews = (state.stats.correctReviews || 0) + 1;
+  state.stats.lastStudyDate = todayKey();
+
+  view.idx++;
+  view.flipped = false;
+  await saveData(state);
+  render();
+}
+
+// ---------- Backup ----------
+function downloadBackup() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = APP_ID + '-backup-' + todayKey() + '.json';
+  a.click();
+  showToast('Backup heruntergeladen');
+}
+
+function uploadBackup() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json,application/json';
+  input.onchange = () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!data || !Array.isArray(data.decks)) throw new Error('Kein gueltiges Karteikarten-Backup');
+        if (!confirm('Aktuelle Daten ueberschreiben mit Backup?')) return;
+        if (!data.stats) data.stats = { totalReviews: 0, correctReviews: 0, lastStudyDate: null };
+        await saveData(data);
+        view = { name: 'home' };
+        render();
+        showToast('Backup geladen');
+      } catch (e) {
+        showToast('Ungueltige Backup-Datei: ' + e.message, true);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ---------- PulseOS SDK ----------
 if (window.PulseOS) {
-  PulseOS.onInput('data', function(incoming) {
-    console.log('Received graph input:', incoming);
+  PulseOS.onInput && PulseOS.onInput('data', async (incoming) => {
+    // Erlaubt Graph-Input: Array von { front, back } -> als neues Deck "Imported"
+    if (!incoming) return;
+    try {
+      let cards = [];
+      if (Array.isArray(incoming)) cards = incoming;
+      else if (incoming.cards && Array.isArray(incoming.cards)) cards = incoming.cards;
+      else return;
+      const valid = cards
+        .filter(c => c && c.front && c.back)
+        .map(c => ({ id: uid(), front: String(c.front), back: String(c.back), box: 1, lastReview: 0, correctCount: 0, wrongCount: 0 }));
+      if (!valid.length) return;
+      const deckName = (incoming.deckName || incoming.name || 'Importiert ' + todayKey());
+      state.decks.push({ id: uid(), name: deckName, description: 'Via Graph-Input', created: Date.now(), cards: valid });
+      await saveData(state);
+      render();
+      showToast('Deck importiert: ' + deckName);
+    } catch (e) {}
   });
-  PulseOS.onDataChanged(function() {
-    console.log('Data changed externally, reloading...');
+  PulseOS.onDataChanged && PulseOS.onDataChanged(async () => {
+    state = await loadData();
+    render();
   });
 }
+
+// ---------- Boot ----------
+(async () => {
+  state = await loadData();
+  render();
+})();
 </script>
 </body>
 </html>

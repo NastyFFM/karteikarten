@@ -1,0 +1,22 @@
+{
+  "name": "Karteikarten",
+  "icon": "K",
+  "color": "#1a2a3a",
+  "description": "karteikarten zum lernen für schuüler und studenten",
+  "inputs": [
+    {
+      "id": "data",
+      "desc": "Beliebige Daten empfangen"
+    }
+  ],
+  "outputs": [
+    {
+      "id": "state",
+      "desc": "Aktueller App-Zustand"
+    }
+  ],
+  "dataFiles": [
+    "state"
+  ],
+  "pulseSubscriptions": []
+}

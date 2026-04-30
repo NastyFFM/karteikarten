@@ -5,14 +5,15 @@
 - Folder: /Users/chris.pohl/Documents/GitHub/karteikarten
 - Created: 2026-04-30
 - Template: frontend
-- GitHub: not published yet
-- Live URL: not deployed yet
+- GitHub: https://github.com/NastyFFM/karteikarten
+- Live URL: https://nastyffm.github.io/karteikarten/
+- Deployed: 2026-04-30
 
 ## Features
 
 | Feature | Branch | Status | Refined | Plan | Progress | Review | Deployed |
 |---------|--------|--------|---------|------|----------|--------|----------|
-| Initial MVP | main | [~] implemented | [x] | [x] | [x] | [ ] | [ ] |
+| Initial MVP | main | [x] deployed | [x] | [x] | [x] | [ ] | [x] |
 
 ## Description
 karteikarten zum lernen für schuüler und studenten
